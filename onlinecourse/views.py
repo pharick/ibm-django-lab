@@ -141,16 +141,23 @@ def submit(request, course_id):
 def show_exam_result(request, course_id, submission_id):
     course = get_object_or_404(Course, id=course_id)
     submission = get_object_or_404(Submission, id=submission_id)
-    selected_ids = [choice.id for choice in submission.choices.all()]
 
     grade = 0
+    questions = []
     for question in course.question_set.all():
-        if question.is_get_score(selected_ids):
+        correct_ids = question.choice_set.filter(is_correct=True).values_list('id', flat=True)
+        question_choice_ids = question.choice_set.values_list('id', flat=True)
+        choice_ids = submission.choices.filter(id__in=question_choice_ids).values_list('id', flat=True)
+        questions.append((question, choice_ids, correct_ids))
+
+        if question.is_get_score(choice_ids):
             grade += question.grade
+
+    print(questions)
 
     context = {
         'course': course,
-        'selected_ids': selected_ids,
+        'questions': questions,
         'grade': grade,
     }
 

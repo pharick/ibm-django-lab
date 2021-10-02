@@ -1,9 +1,12 @@
+{% load exam_result_extras %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     {% load static %}
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Online Courses - {{ course.name }} exam results</title>
 </head>
 <body>
 
@@ -38,30 +41,45 @@
 <div class="container-fluid">
     {% if grade > 80 %}
         <div class="alert alert-success">
-           <b>Congratulations, {{ user.first_name }}!</b> You have passed the exam and completed the course with score
+           <b>Your grade: {{ grade }}</b> <b>Congratulations, {{ user.first_name }}!</b> You have passed the exam and completed the course with score
         </div>
     {% else %}
         <div class="alert alert-danger">
-            You have not passed the test
+            <b>Your grade: {{ grade }}</b> You have not passed the test
         </div>
         <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
     {% endif %}
+
     <div class="card-columns-vertical mt-1">
         <h5 class="">Exam results</h5>
-        {% for question in course.question_set.all %}
+        {% for question, choice_ids, correct_ids in questions %}
             <div class="card my-1">
                 <div class="card-header"><h5 class="m-0">{{ question.question_text }}</h5></div>
                 <div class="card-body">
                     <ul>
                         {% for choice in question.choice_set.all %}
-                            <li class="{% if choice.id in selected_ids %} text-primary font-weight-bold {% endif %}">{{ choice.choice_text }}</li>
+                            <li class="
+                                    {% if choice.id in choice_ids %} font-weight-bold {% endif %}
+                                    {% if choice.id in choice_ids and choice.id in correct_ids %}
+                                        text-success
+                                    {% elif choice.id in choice_ids and choice.id not in correct_ids %}
+                                        text-danger
+                                    {% endif %}
+                            ">
+                                {{ choice.choice_text }}
+                                {% if choice.id in choice_ids and choice.id in correct_ids %}
+                                    - Correct answer
+                                {% elif choice.id in choice_ids and choice.id not in correct_ids %}
+                                    - Wrong answer
+                                {% endif %}
+                            </li>
                         {% endfor %}
                     </ul>
 
-                    {% if question.is_get_score %}
-                        <p>Corrent answer</p>
+                    {% if question|is_get_score:choice_ids %}
+                        <p class="text-success">Corrent</p>
                     {% else %}
-                        <p>Wrong answer</p>
+                        <p class="text-danger">Wrong</p>
                     {% endif %}
                 </div>
             </div>
